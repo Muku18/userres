@@ -1,4 +1,4 @@
-from flask import Flask, request,jsonify
+from flask import Flask, request, jsonify
 from flask_restful import Api, Resource, reqparse, fields, marshal_with
 from pymongo import MongoClient
 from bson import ObjectId
@@ -26,11 +26,15 @@ user_parser.add_argument('name', type=str, required=True, help='Name is required
 user_parser.add_argument('email', type=str, required=True, help='Email is required')
 user_parser.add_argument('password', type=str, required=True, help='Password is required')
 
-class AllUser(Resource):
-    @marshal_with(user_fields)
-    def get(self):
-        return list(mongo.find()),200
 
+class User(Resource):
+    @marshal_with(user_fields)
+    def get(self, user_id=None):
+        if user_id is None:
+            return list(mongo.find()), 200
+        else:
+            user = mongo.find_one({'_id': ObjectId(user_id)})
+            return user, 200
     @marshal_with(user_fields)
     def post(self, ):
         # Create a new user
@@ -43,16 +47,6 @@ class AllUser(Resource):
             return {'message': 'User created', 'id': str(user_id.inserted_id)}, 201
         else:
             return {'message': 'Error creating user'}, 500
-class User(Resource):
-    @marshal_with(user_fields)
-    def get(self, user_id):
-        user = mongo.find_one({'_id': ObjectId(user_id)})
-        if user:
-            user['_id'] = str(user['_id'])
-            return jsonify(user)
-        else:
-            return jsonify({'message': 'User not found'}), 404
-
 
     @marshal_with(user_fields)
     def put(self, user_id):
@@ -75,10 +69,7 @@ class User(Resource):
             return jsonify({'message': 'User not found'}), 404
 
 
-api.add_resource(AllUser, '/users')
-api.add_resource(User, '/users/<string:user_id>')
-
+api.add_resource(User, '/users', '/users/<string:user_id>')
 if __name__ == '__main__':
     app.run(debug=True)
-
 
